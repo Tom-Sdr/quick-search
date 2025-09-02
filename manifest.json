@@ -1,0 +1,26 @@
+{
+  "browser_specific_settings": {
+    "gecko": {
+      "strict_min_version": "58.0a1"
+    }
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "commands": {
+    "quick-search": {
+      "suggested_key": { "mac": "MacCtrl+Space" },
+      "description": "quickly search tabs and possibly bookmarks in the future"
+    }
+  },
+  "browser_action": {
+    "browser_style": true,
+    "default_title": "quick-search",
+    "default_popup": "search.html"
+  },
+  "description": "launcher to quickly search tabs and possibly bookmarks in the future",
+  "manifest_version": 2,
+  "name": "quick-search",
+  "permissions": ["tabs"],
+  "version": "1.0"
+}
