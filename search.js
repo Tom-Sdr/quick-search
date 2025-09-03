@@ -4,6 +4,12 @@ searchBoxElem.focus();
 let selectedTabInOrder = 0;
 const tabListElem = document.querySelector(".tab-list");
 
+// TODO:
+// - indicator for currently active tab
+// - search for bookmarks
+// - box around key-hint -> to form some sort of key-icon
+// - handle missing favicons
+
 function getTabsOfCurrentWindow() {
   return browser.tabs.query({ currentWindow: true });
 }
@@ -21,10 +27,18 @@ getTabsOfCurrentWindow().then((tablist) => {
   updateSelection();
 });
 
-searchBoxElem.addEventListener("input", () => {
-  console.log("input");
+function handleSearchQueryChange() {
   selectedTabInOrder = 0;
   createList(searchBoxElem.value);
+  updateSelection();
+}
+
+searchBoxElem.addEventListener("input", handleSearchQueryChange);
+
+searchBoxElem.addEventListener("keydown", (ev) => {
+  if (key === "Backspace" || key === "Delete") {
+    handleSearchQueryChange();
+  }
 });
 
 function selectPreviousTabInOrder() {
