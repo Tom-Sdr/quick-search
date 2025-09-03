@@ -15,6 +15,7 @@ getTabsOfCurrentWindow().then((tablist) => {
       id: tab.id,
     };
   });
+  createList("");
 });
 
 searchBox.addEventListener("input", () => {

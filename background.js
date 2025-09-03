@@ -4,7 +4,7 @@
 
 browser.commands.onCommand.addListener((command) => {
   if (command === "quick-search") {
-    browser.browserAction.openPopup();
+    browser.action.openPopup();
   }
   //   browser.runtime.sendMessage(command);
 });

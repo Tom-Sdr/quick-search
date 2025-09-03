@@ -1,7 +1,8 @@
 {
   "browser_specific_settings": {
     "gecko": {
-      "strict_min_version": "58.0a1"
+      "strict_min_version": "109.0",
+      "id": "{a0dc3a6a-4f16-4b01-8882-db46d573333e}"
     }
   },
   "background": {
@@ -13,13 +14,12 @@
       "description": "quickly search tabs and possibly bookmarks in the future"
     }
   },
-  "browser_action": {
-    "browser_style": true,
+  "action": {
     "default_title": "quick-search",
     "default_popup": "search.html"
   },
   "description": "launcher to quickly search tabs and possibly bookmarks in the future",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "quick-search",
   "permissions": ["tabs"],
   "version": "1.0"

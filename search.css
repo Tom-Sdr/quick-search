@@ -3,6 +3,7 @@ body {
   /* these are the maximum sizes allowed by the browser */
   width: 800px;
   height: 600px;
+  margin: 0;
 }
 
 .tab-list {
