@@ -5,27 +5,39 @@ let selectedTabInOrder = 0;
 const tabListElem = document.querySelector(".tab-list");
 
 // TODO:
-// - indicator for currently active tab
 // - search for bookmarks
-// - box around key-hint -> to form some sort of key-icon
 // - handle missing favicons
 
 function getTabsOfCurrentWindow() {
   return browser.tabs.query({ currentWindow: true });
 }
 
-getTabsOfCurrentWindow().then((tablist) => {
-  relevantTabInfo = tablist.map((tab) => {
-    return {
-      title: tab.title,
-      url: tab.url,
-      favIconUrl: tab.favIconUrl,
-      id: tab.id,
-    };
-  });
-  createList("");
-  updateSelection();
+browser.tabs.onCreated.addListener(() => updateList());
+
+browser.tabs.onRemoved.addListener((tabIdPedingRemoval) => {
+  updateList(tabIdPedingRemoval); // this is needed, because the event fires to early
 });
+
+function updateRelevantInfo(ignoreIdOfPendingRemoval = null) {
+  return new Promise((resolve) => {
+    getTabsOfCurrentWindow().then((tablist) => {
+      relevantTabInfo = tablist
+        .filter((tab) => {
+          console.log(ignoreIdOfPendingRemoval);
+          return !(tab.id === ignoreIdOfPendingRemoval); // both null-ids and the pendingRemovalId should be ignored
+        })
+        .map((tab) => {
+          return {
+            title: tab.title,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
+            id: tab.id,
+          };
+        });
+      resolve();
+    });
+  });
+}
 
 function handleSearchQueryChange() {
   selectedTabInOrder = 0;
@@ -36,7 +48,7 @@ function handleSearchQueryChange() {
 searchBoxElem.addEventListener("input", handleSearchQueryChange);
 
 searchBoxElem.addEventListener("keydown", (ev) => {
-  if (key === "Backspace" || key === "Delete") {
+  if (ev.key === "Backspace" || ev.key === "Delete") {
     handleSearchQueryChange();
   }
 });
@@ -45,12 +57,12 @@ function selectPreviousTabInOrder() {
   if (selectedTabInOrder > 0) {
     selectedTabInOrder--;
   } else {
-    selectedTabInOrder = relevantTabInfo.length - 1;
+    selectedTabInOrder = getTabsByQuery(searchBoxElem.value).length - 1;
   }
 }
 
 function selectNextTabInOrder() {
-  if (selectedTabInOrder < relevantTabInfo.length - 1) {
+  if (selectedTabInOrder < getTabsByQuery(searchBoxElem.value).length - 1) {
     selectedTabInOrder++;
   } else {
     selectedTabInOrder = 0;
@@ -97,7 +109,7 @@ document.addEventListener("keypress", (ev) => {
     const id = selectedTabEntry.id;
     if (id == undefined) return;
 
-    console.log("switching tab");
+    // console.log("switching tab");
 
     browser.tabs.update(id, {
       active: true,
@@ -128,6 +140,11 @@ function updateSelection() {
   });
 }
 
-browser.runtime.onMessage.addListener((message) => {
-  //   document.querySelector(".counter").innerHTML = message.toString();
-});
+function updateList(ignoreIdOfPendingRemoval = null) {
+  updateRelevantInfo(ignoreIdOfPendingRemoval).then(() => {
+    createList("");
+    updateSelection();
+  });
+}
+
+updateList();

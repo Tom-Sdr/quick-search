@@ -21,6 +21,6 @@
   "description": "launcher to quickly search tabs and possibly bookmarks in the future",
   "manifest_version": 3,
   "name": "quick-search",
-  "permissions": ["tabs"],
+  "permissions": ["tabs", "bookmarks"],
   "version": "1.0"
 }

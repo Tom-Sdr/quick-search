@@ -45,18 +45,21 @@ body {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  gap: 0.5rem;
+  gap: 2px;
   overflow-y: auto;
 }
 
 .tab-display {
   display: flex;
   width: 100%;
-  height: 1.5rem;
-  /* outline: 3px solid red; */
+  height: 2rem;
   color: white;
   font-family: "Inter", Arial;
   gap: 0.5rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  box-sizing: border-box;
+  align-items: center;
 }
 
 .tab-icon {
@@ -73,6 +76,20 @@ body {
 
 .tab-key-hint {
   display: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid #80808f;
+  color: #80808f;
+  font-weight: 800;
+  font-size: 0.65rem;
+  line-height: 1rem;
+  text-align: center;
+  border-radius: 4px;
+  padding: 1px;
+}
+
+.tab--selected {
+  background-color: #3a3944;
 }
 
 .tab--selected > .tab-key-hint {
