@@ -1,6 +1,8 @@
 let relevantTabInfo = [];
-let searchBox = document.querySelector(".search-box");
-searchBox.focus();
+let searchBoxElem = document.querySelector(".search-box");
+searchBoxElem.focus();
+let selectedTabInOrder = 0;
+const tabListElem = document.querySelector(".tab-list");
 
 function getTabsOfCurrentWindow() {
   return browser.tabs.query({ currentWindow: true });
@@ -16,11 +18,41 @@ getTabsOfCurrentWindow().then((tablist) => {
     };
   });
   createList("");
+  updateSelection();
 });
 
-searchBox.addEventListener("input", () => {
+searchBoxElem.addEventListener("input", () => {
   console.log("input");
-  createList(searchBox.value);
+  selectedTabInOrder = 0;
+  createList(searchBoxElem.value);
+});
+
+function selectPreviousTabInOrder() {
+  if (selectedTabInOrder > 0) {
+    selectedTabInOrder--;
+  } else {
+    selectedTabInOrder = relevantTabInfo.length - 1;
+  }
+}
+
+function selectNextTabInOrder() {
+  if (selectedTabInOrder < relevantTabInfo.length - 1) {
+    selectedTabInOrder++;
+  } else {
+    selectedTabInOrder = 0;
+  }
+}
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.key == "Tab") {
+    ev.preventDefault();
+    if (ev.shiftKey) {
+      selectPreviousTabInOrder();
+    } else {
+      selectNextTabInOrder();
+    }
+    updateSelection();
+  }
 });
 
 function getTabsByQuery(searchQuery) {
@@ -36,7 +68,6 @@ function getTabsByQuery(searchQuery) {
 }
 
 function createList(searchQuery) {
-  const tabListElem = document.querySelector(".tab-list");
   const tabList = getTabsByQuery(searchQuery).map((tabInfo) => {
     return createElementFrom(tabInfo);
   });
@@ -45,12 +76,11 @@ function createList(searchQuery) {
 
 document.addEventListener("keypress", (ev) => {
   if (ev.key == "Enter") {
-    console.log("keyCode is enter");
-
-    const mostRelevantEntry = getTabsByQuery(searchBox.value)[0];
-    console.log(getTabsByQuery(searchBox.value)[0]);
-    if (mostRelevantEntry == undefined) return;
-    const id = mostRelevantEntry.id;
+    const selectedTabEntry = getTabsByQuery(searchBoxElem.value)[
+      selectedTabInOrder
+    ];
+    if (selectedTabEntry == undefined) return;
+    const id = selectedTabEntry.id;
     if (id == undefined) return;
 
     console.log("switching tab");
@@ -65,8 +95,23 @@ document.addEventListener("keypress", (ev) => {
 
 function createElementFrom(tabInfo) {
   return `
-    <div class="tab-display"><img class="tab-icon" src=${tabInfo.favIconUrl}>${tabInfo.title} -- ${tabInfo.id}</div>
+    <div class="tab-display">
+        <img class="tab-icon" src=${tabInfo.favIconUrl}>
+        <span class="tab-text">${tabInfo.title}</span>
+        <div class="tab-key-hint">↵</div>
+    </div>
     `;
+}
+
+const selectionIndicatorClass = "tab--selected";
+function updateSelection() {
+  const tabArray = Array.from(tabListElem.children);
+  tabArray.forEach((child, index) => {
+    child.classList.remove(selectionIndicatorClass);
+    if (index == selectedTabInOrder) {
+      child.classList.add(selectionIndicatorClass);
+    }
+  });
 }
 
 browser.runtime.onMessage.addListener((message) => {
