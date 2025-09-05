@@ -5,10 +5,12 @@ searchBoxElem.focus();
 let selectedTabFromList;
 const tabListElem = document.querySelector(".tab-list");
 const selectionIndicatorClass = "tab--selected";
+const tabActiveClass = "tab-display--active";
 
 // TODO:
 // - handle missing favicons
-// - display for which tab is currently active in browser
+// - display for bookmark-folders -> tree view by default? enter to show?
+// - see if it can be fixed that ctrl+tab has to be used twice to get to next tab & regain focus immediately afterwards
 
 function getTabsOfCurrentWindow() {
   return browser.tabs.query({ currentWindow: true });
@@ -18,6 +20,20 @@ browser.tabs.onCreated.addListener(() => updateList());
 
 browser.tabs.onRemoved.addListener((tabIdPedingRemoval) => {
   updateList(tabIdPedingRemoval); // this is needed, because the event fires to early
+});
+
+function displayActiveStatusForTab(tabId) {
+  document.querySelectorAll(`.${tabActiveClass}`).forEach((el) => {
+    el.classList.remove(tabActiveClass);
+  });
+  const currentlyActiveTab = document.querySelector(`[data-tab-id="${tabId}"]`);
+  if (!!!currentlyActiveTab) return;
+
+  currentlyActiveTab.classList.add(tabActiveClass);
+}
+
+browser.tabs.onActivated.addListener((activateInfo) => {
+  displayActiveStatusForTab(activateInfo.tabId);
 });
 
 function updateTabInfo(ignoreIdOfPendingRemoval = null) {
@@ -208,7 +224,7 @@ function createBookmarkDisplayFrom(bookmarkInfo) {
 
 function clearTabSelection() {
   // would there be any benefit in using querySelector and querying for the class?
-  const tabArray = Array.from(tabListElem.children);
+  const tabArray = Array.from(getSelectableElements());
   tabArray.forEach((child) => {
     child.classList.remove(selectionIndicatorClass);
   });
@@ -234,6 +250,12 @@ function updateList(ignoreIdOfPendingRemoval = null) {
       "first-child: " + JSON.stringify(tabListElem.firstElementChild)
     );
     selectFirstTab();
+    browser.tabs
+      .query({ currentWindow: true, active: true })
+      .then((activeTabs) => {
+        let currentTab = activeTabs[0];
+        displayActiveStatusForTab(currentTab.id);
+      });
   });
 }
 

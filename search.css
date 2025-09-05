@@ -56,6 +56,17 @@ body {
   align-items: center;
 }
 
+.tab-display--active::before {
+  position: absolute;
+  translate: calc(-100% - 4px) 0;
+  display: block;
+  background-color: #80808f;
+  width: 4px;
+  height: 8px;
+  border-radius: 2px;
+  content: " ";
+}
+
 .tab-icon {
   height: 75%;
   aspect-ratio: 1/1;
