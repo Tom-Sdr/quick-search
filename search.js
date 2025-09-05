@@ -8,9 +8,7 @@ const selectionIndicatorClass = "tab--selected";
 
 // TODO:
 // - handle missing favicons
-// - fix scrollbar styling
 // - display for which tab is currently active in browser
-// - fix selection of last element (jumping over divider)
 
 function getTabsOfCurrentWindow() {
   return browser.tabs.query({ currentWindow: true });
@@ -83,41 +81,36 @@ searchBoxElem.addEventListener("keydown", (ev) => {
   }
 });
 
-function selectPreviousTabInOrder() {
-  if (!!!selectedTabFromList) {
-    // this shouldn't happen
-  } else if (!!selectedTabFromList.previousElementSibling) {
-    let previousTab = selectedTabFromList.previousElementSibling;
-    if (!isValidTabElement(previousTab)) {
-      previousTab = previousTab.previousElementSibling;
-      // this assumes that there is a maximum of one invalid element that should not be the last element
-    }
-    selectTabFromList(previousTab);
-  } else {
-    selectTabFromList(tabListElem.lastElementChild);
-  }
-}
-
-function isValidTabElement(possibleTabElement) {
-  return (
-    !!possibleTabElement.dataset.tabId ||
-    !!possibleTabElement.dataset.bookmarkId
+function getSelectableElements() {
+  return Array.from(
+    document.querySelectorAll("[data-bookmark-id], [data-tab-id]")
   );
 }
 
+function selectPreviousTabInOrder() {
+  // TODO: what happens when there is no tab -> what does indexOf return on null
+  const selectables = getSelectableElements();
+  if (selectables.length == 0) return;
+
+  const currentIndex = selectables.indexOf(selectedTabFromList);
+  const nextIndex =
+    (currentIndex - 1 + selectables.length) % selectables.length;
+
+  const newSelection = selectables[nextIndex];
+
+  selectTabFromList(newSelection);
+}
+
 function selectNextTabInOrder() {
-  if (!!!selectedTabFromList) {
-    // this shouldn't happen
-  } else if (!!selectedTabFromList.nextElementSibling) {
-    let nextTab = selectedTabFromList.nextElementSibling;
-    // this assumes that there is a maximum of one invalid element that should not be the last element
-    if (!isValidTabElement(nextTab)) {
-      nextTab = nextTab.nextElementSibling;
-    }
-    selectTabFromList(nextTab);
-  } else {
-    selectTabFromList(tabListElem.firstChild);
-  }
+  const selectables = getSelectableElements();
+  if (selectables.length == 0) return;
+
+  const currentIndex = selectables.indexOf(selectedTabFromList);
+  const nextIndex = (currentIndex + 1) % selectables.length;
+
+  const newSelection = selectables[nextIndex];
+
+  selectTabFromList(newSelection);
 }
 
 document.addEventListener("keydown", (ev) => {
@@ -230,7 +223,7 @@ function selectTabFromList(tab) {
 }
 
 function selectFirstTab() {
-  selectTabFromList(tabListElem.firstElementChild);
+  selectTabFromList(getSelectableElements()[0]);
 }
 
 function updateList(ignoreIdOfPendingRemoval = null) {
