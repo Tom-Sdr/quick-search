@@ -7,6 +7,8 @@ const tabListElem = document.querySelector(".tab-list");
 const selectionIndicatorClass = "tab--selected";
 const tabActiveClass = "tab-display--active";
 
+// FIXME: sanitize tab-title! something like <canvas> in the title will actually be inserted into the dom because of innerHTML=...
+
 // TODO:
 // - handle missing favicons
 // - display for bookmark-folders -> tree view by default? enter to show?
