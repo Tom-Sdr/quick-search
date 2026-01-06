@@ -22,5 +22,5 @@
   "manifest_version": 3,
   "name": "quick-search",
   "permissions": ["tabs", "bookmarks"],
-  "version": "1.1"
+  "version": "1.2"
 }
