@@ -1,0 +1,24 @@
+html,
+body {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+body {
+  /* these are the maximum sizes allowed by the browser */
+  width: 500px;
+  height: 500px;
+  padding: 1rem;
+
+  background-color: #42414d;
+
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+/* TODO: eventually use something like this:
+@media (prefers-color-scheme: light) {
+
+}
+*/
