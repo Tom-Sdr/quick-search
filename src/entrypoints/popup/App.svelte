@@ -4,8 +4,20 @@
   let tabs: Tab[] = $state([]);
   let bookmarks: Bookmark[] = $state([]);
 
-  let selectedSelectableId: null | {type: string, id_value: string} = $state(null);
   let activeTabId: number | null = $state(null);
+
+  let selectables = $derived([...tabs, ...bookmarks]);
+
+  // when search changes, reset to index 0
+  let selectedSelectableIndex = $state(0); // TODO: initialize to active tab
+  let selectedSelectableId: null | {type: string, id_value: string} = $derived.by(() => {
+    if(selectedSelectableIndex >= selectables.length) {
+      return null;
+    }
+    return selectables[selectedSelectableIndex].id
+  })
+
+  let searchQuery = $state("");
 
   class Tab implements Selectable {
     id: {type: "tab", id_value: string};
@@ -27,7 +39,7 @@
     }
   }
 
-  async function getNonPendingTabsOfCurrentWindow(tabIdPendingRemoval?: number | null) {
+  async function getNonPendingTabsOfCurrentWindow(searchQuery: string, tabIdPendingRemoval?: number | null) {
     return (await browser.tabs.query({ currentWindow: true }))
       .values()  
       .filter((tab) => {
@@ -49,7 +61,11 @@
       })
       .map((tab) => {
         return new Tab(tab.id!, tab.title!, tab.url!, tab.favIconUrl!)
-      }).toArray();
+      })
+      .filter((tab) => {
+        return tab.url.includes(searchQuery) || tab.title.includes(searchQuery)
+      })
+      .toArray();
   }
 
   interface Selectable {
@@ -76,7 +92,9 @@
     }
   }
 
-  async function getBookmarks() {
+  async function getBookmarks(searchQuery: string) {
+    const lowerCaseSearchQuery = searchQuery.toLowerCase();
+
     return (await browser.bookmarks.search({}))
       .values()
       .filter((bookmarkNode) => {
@@ -89,29 +107,98 @@
       .map((bookmarkNode) => {
         return new Bookmark(bookmarkNode.id, bookmarkNode.title, bookmarkNode.url!)
       })
+      .filter((bookmark) => {
+        return bookmark.url.toLowerCase().includes(lowerCaseSearchQuery) || bookmark.title.includes(lowerCaseSearchQuery);
+      })
       .toArray();
   }
 
-  // TODO: add query parameter here
-  async function updateList(ignoreIdOfPendingRemoval?: number | null) {
-    tabs = await getNonPendingTabsOfCurrentWindow(ignoreIdOfPendingRemoval);
-    bookmarks = await getBookmarks();
+  async function updateList(searchQuery: string, updateReason: "browserSentEvent" | "queryChange", ignoreIdOfPendingRemoval?: number | null) {
+    tabs = await getNonPendingTabsOfCurrentWindow(searchQuery, ignoreIdOfPendingRemoval);
+    bookmarks = await getBookmarks(searchQuery);
+
+    switch (updateReason) {
+      case "browserSentEvent":
+        const currentIndex = selectables.findIndex((selectable) => {
+          return !!selectedSelectableId && areIdsEqual(selectedSelectableId, selectable.id)
+        });
+
+        if(currentIndex === -1) {
+          selectedSelectableIndex -= 1;
+        } else if (currentIndex != selectedSelectableIndex) (
+          selectedSelectableIndex = Math.max(0, selectedSelectableIndex - 1)
+        )
+
+        break;
+      case "queryChange":
+        selectedSelectableIndex = 0;
+        break;
+    }
   }
 
   function areIdsEqual(id1: {type: string, id_value: string}, id2: {type: string, id_value: string}) {
     return id1.type === id2.type && id1.id_value === id2.id_value;
   }
 
+  function selectNextTabInOrder() {
+    if (selectables.length == 0) return;
+
+    selectedSelectableIndex = (selectedSelectableIndex + 1) % selectables.length;
+  }
+
+  function selectPreviousTabInOrder() {
+    if (selectables.length == 0) return;
+
+    selectedSelectableIndex = (selectedSelectableIndex - 1 + selectables.length) % selectables.length;
+  }
+
+  // search soll behalten werden, auch wenn sich ein tab schließt -> wenn es der Tab ist, der selektiert ist, soll vorheriger genommen werden, wenn es ein vorheriger ist, muss index nach unten geshiftet werden.
+  // wenn search sich ändert, soll index auf 0 gesetzt werden
+  // -> update list muss bei aufruf auf search-query zugreifen
+
+  /*
+  // this minimal example shows me, that its deterministic and the state update happens before is input event is called
+  
+	let inp = $state(null);
+
+	function useState() {
+		console.log(inp);
+	}
+
+  <input type="text" bind:value={inp} oninput={(e) => {
+    console.log("val: " + e.target.value);
+    useState();
+  }}/>
+  */
+  // but maybe better to just use effect? -> nope, but function bindings!! : https://svelte.dev/docs/svelte/$effect#When-not-to-use-$effect
   onMount(() => {
-    browser.tabs.onCreated.addListener(() => updateList());
+    browser.tabs.onCreated.addListener(() => updateList(searchQuery, "browserSentEvent"));
 
     browser.tabs.onRemoved.addListener((tabIdPedingRemoval) => {
-      updateList(tabIdPedingRemoval); // this is needed, because the event fires to early
+      updateList(searchQuery, "browserSentEvent", tabIdPedingRemoval); // this is needed, because the event fires to early
     });
 
-    updateList().then(() => {
-      selectedSelectableId = !!tabs[0] && !!tabs[0].id ? tabs[0].id : null
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key == "Enter") {
+        let selectedSelectable = selectables.find(el => {
+          return !!selectedSelectableId && areIdsEqual(el.id, selectedSelectableId);
+        });
+
+        if(!!selectedSelectable) {
+          selectedSelectable.submit()
+        }
+      } else if (ev.key == "Tab") { // and not ctrl modifier?
+        ev.preventDefault();
+        if (ev.shiftKey) {
+          selectPreviousTabInOrder();
+        } else {
+          selectNextTabInOrder();
+        }
+      }
     });
+
+    // think about if queryChange is the right one here
+    updateList(searchQuery, "queryChange");
 
     browser.tabs.onActivated.addListener((activateInfo) => {
       activeTabId = activateInfo.tabId;
