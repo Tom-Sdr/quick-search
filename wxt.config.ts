@@ -9,9 +9,17 @@ export default defineConfig({
     commands: {
       "quick-search": {
         "suggested_key": { "mac": "MacCtrl+Space" },
-        "description": "quickly search tabs and possibly bookmarks in the future"
+        "description": "quickly search tabs and bookmarks"
       }
     },
+    browser_specific_settings: {
+      gecko: {
+        strict_min_version: "109.0",
+        id: "{a0dc3a6a-4f16-4b01-8882-db46d573333e}"
+      }
+    },
+    description: "Launcher to quickly search tabs and bookmarks",
+    version: "1.3"
   },
   manifestVersion: 3,
   webExt: {
