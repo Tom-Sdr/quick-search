@@ -8,15 +8,9 @@
 
   let selectables = $derived([...tabs, ...bookmarks]);
 
-  // when search changes, reset to index 0
-  let selectedSelectableIndex = $state(0); // TODO: initialize to active tab
-
-  let selectedSelectableId: null | {type: string, id_value: string} = $derived.by(() => {
-    if(selectedSelectableIndex >= selectables.length) {
-      return null;
-    }
-    return selectables[selectedSelectableIndex].id
-  })
+  // TODO: there should be a way to only be able to update both together
+  let selectedSelectableIndex = $state(0);
+  let selectedSelectableId: null | {type: string, id_value: string} = $state(null);
 
   let searchQuery = $state("");
 
@@ -53,9 +47,15 @@
           return false;
         }
 
-        if (tab.title === undefined || tab.url === undefined || tab.favIconUrl === undefined) {
-          console.error(`some tab property is not set. This should only happen, if the extension doesn't have tabs permission. The tab object: ${JSON.stringify(tab)}`)
-          return false;
+        // TODO: these might have to be captured & updated via the tabs.onUpdated event: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/onUpdated
+        if (tab.title === undefined) {
+          console.error(`tab title is not set. This should only happen, if the extension doesn't have tabs permission.`)
+        }
+        if (tab.url === undefined) {
+          console.error(`tab url is not set. This should only happen, if the extension doesn't have tabs permission.`)
+        }
+        if (tab.favIconUrl === undefined) {
+          console.error(`tab favIcon is not set. This should only happen, if the extension doesn't have tabs permission.`)
         }
 
         return true;
@@ -118,24 +118,26 @@
     tabs = await getNonPendingTabsOfCurrentWindow(searchQuery, ignoreIdOfPendingRemoval);
     bookmarks = await getBookmarks(searchQuery);
 
+    // for now this seems like one could also do this by depending id on index
     switch (updateReason) {
-      case "browserSentEvent":
-        const currentIndex = selectables.findIndex((selectable) => {
-          return !!selectedSelectableId && areIdsEqual(selectedSelectableId, selectable.id)
-        });
-
-        console.log(currentIndex);
-
-        if(currentIndex === -1) {
-          console.log("tab not present anymore");
-          selectedSelectableIndex = Math.max(0, selectedSelectableIndex - 1);
-        } else if (currentIndex != selectedSelectableIndex) {
-          selectedSelectableIndex = currentIndex;
-        }
-
-        break;
       case "queryChange":
         selectedSelectableIndex = 0;
+        selectedSelectableId = selectables[selectedSelectableIndex].id; // resets to 0
+        break;
+
+      case "browserSentEvent":
+        const indexById = selectables.findIndex((selectable) => {
+          return !!selectedSelectableId && areIdsEqual(selectedSelectableId, selectable.id);
+        });
+
+        // TODO: think about when selectedSelectableId is null
+        if(indexById !== -1) {
+          selectedSelectableIndex = indexById;
+        } else {
+          selectedSelectableIndex = Math.max(0, selectedSelectableIndex - 1);
+          selectedSelectableId = selectables[selectedSelectableIndex].id;
+        }
+
         break;
     }
   }
@@ -148,12 +150,14 @@
     if (selectables.length == 0) return;
 
     selectedSelectableIndex = (selectedSelectableIndex + 1) % selectables.length;
+    selectedSelectableId = selectables[selectedSelectableIndex].id;
   }
 
   function selectPreviousTabInOrder() {
     if (selectables.length == 0) return;
 
     selectedSelectableIndex = (selectedSelectableIndex - 1 + selectables.length) % selectables.length;
+    selectedSelectableId = selectables[selectedSelectableIndex].id;
   }
 
   // search soll behalten werden, auch wenn sich ein tab schließt -> wenn es der Tab ist, der selektiert ist, soll vorheriger genommen werden, wenn es ein vorheriger ist, muss index nach unten geshiftet werden.
@@ -175,6 +179,21 @@
   }}/>
   */
   // but maybe better to just use effect? -> nope, but function bindings!! : https://svelte.dev/docs/svelte/$effect#When-not-to-use-$effect
+
+  function trapFocus(element: HTMLInputElement) {
+    const setFocus = () => {
+      element.focus();
+    }
+
+    setFocus();
+
+    window.addEventListener("focus", setFocus);
+
+    return () => {
+      window.removeEventListener("focus", setFocus);
+    }
+  }
+
   onMount(() => {
     browser.tabs.onCreated.addListener(() => updateList(searchQuery, "browserSentEvent"));
 
@@ -220,7 +239,7 @@
 
 <main>
 <!-- <input class="search-box" bind:value={() => searchQuery, (value) => {updateList(value, "queryChange")}}> -->
-<input class="search-box" bind:value={searchQuery} oninput={(ev) => {
+<input {@attach trapFocus} class="search-box" bind:value={searchQuery} oninput={(ev) => {
     if(!!!ev.target) return;
     updateList(ev.currentTarget.value, "queryChange")
   }}>
@@ -236,7 +255,7 @@
       data-tab-id={tab.id}>
       <!-- TODO: getting error `Content at moz-extension://{id}/popup.html may not load or link to chrome://mozapps/skin/extensions/extension.svg` when trying to access favicon of about:addons -> get icon from somewhere else -->
       <!-- TODO: fix for no icon present -->
-      <img class="tab-icon" src={tab.iconUrl} alt="tab-icon">
+      <img class="tab-icon" src={tab.iconUrl} alt="">
       <span class="tab-text">{tab.title}</span>
       <div class="tab-key-hint">↵</div>
     </div>
