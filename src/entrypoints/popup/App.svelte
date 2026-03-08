@@ -10,6 +10,7 @@
 
   // when search changes, reset to index 0
   let selectedSelectableIndex = $state(0); // TODO: initialize to active tab
+
   let selectedSelectableId: null | {type: string, id_value: string} = $derived.by(() => {
     if(selectedSelectableIndex >= selectables.length) {
       return null;
@@ -63,7 +64,7 @@
         return new Tab(tab.id!, tab.title!, tab.url!, tab.favIconUrl!)
       })
       .filter((tab) => {
-        return tab.url.includes(searchQuery) || tab.title.includes(searchQuery)
+        return tab.url.toLowerCase().includes(searchQuery) || tab.title.toLowerCase().includes(searchQuery)
       })
       .toArray();
   }
@@ -108,7 +109,7 @@
         return new Bookmark(bookmarkNode.id, bookmarkNode.title, bookmarkNode.url!)
       })
       .filter((bookmark) => {
-        return bookmark.url.toLowerCase().includes(lowerCaseSearchQuery) || bookmark.title.includes(lowerCaseSearchQuery);
+        return bookmark.url.toLowerCase().includes(lowerCaseSearchQuery) || bookmark.title.toLowerCase().includes(lowerCaseSearchQuery);
       })
       .toArray();
   }
@@ -123,11 +124,14 @@
           return !!selectedSelectableId && areIdsEqual(selectedSelectableId, selectable.id)
         });
 
+        console.log(currentIndex);
+
         if(currentIndex === -1) {
-          selectedSelectableIndex -= 1;
-        } else if (currentIndex != selectedSelectableIndex) (
-          selectedSelectableIndex = Math.max(0, selectedSelectableIndex - 1)
-        )
+          console.log("tab not present anymore");
+          selectedSelectableIndex = Math.max(0, selectedSelectableIndex - 1);
+        } else if (currentIndex != selectedSelectableIndex) {
+          selectedSelectableIndex = currentIndex;
+        }
 
         break;
       case "queryChange":
@@ -215,6 +219,11 @@
 </script>
 
 <main>
+<!-- <input class="search-box" bind:value={() => searchQuery, (value) => {updateList(value, "queryChange")}}> -->
+<input class="search-box" bind:value={searchQuery} oninput={(ev) => {
+    if(!!!ev.target) return;
+    updateList(ev.currentTarget.value, "queryChange")
+  }}>
 <div class="tab-list">
   {#each tabs as tab}
     <div class={[
@@ -252,6 +261,22 @@
 
 <style>
 /* TODO: fix different gap between icon and title for bookmarks and tabs */
+
+.search-box {
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #2b2a33;
+  color: white;
+  outline: none;
+  border: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24px' viewBox='0 -960 960 960' width='24px' fill='%239595a3'%3E%3Cpath d='M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  --padding: 6px;
+  background-position: left var(--padding) top 50%;
+  background-size: calc(24px - 4px);
+  padding: var(--padding) var(--padding) var(--padding) calc(24px + 2 * 4px);
+  border-radius: 4px;
+}
 
 .tab-list {
   display: flex;
