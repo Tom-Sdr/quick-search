@@ -19,7 +19,7 @@ export default defineConfig({
       }
     },
     description: "Launcher to quickly search tabs and bookmarks",
-    version: "1.3"
+    version: "0.1.4"
   },
   manifestVersion: 3,
   webExt: {
