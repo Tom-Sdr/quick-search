@@ -1,5 +1,4 @@
 <script lang="ts">
-  // let { oninput }: { oninput: (searchQuery: string) => void } = $props();
   let { searchQuery = $bindable() }: { searchQuery: string } = $props();
 
   function trapFocus(element: HTMLInputElement) {

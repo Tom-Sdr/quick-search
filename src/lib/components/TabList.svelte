@@ -199,7 +199,10 @@
   }
 
   .tab-display {
-    display: flex;
+    display: grid;
+    grid-template-areas: "icon title keyhint";
+    --icon-size: 20px;
+    grid-template-columns: var(--icon-size) 1fr var(--icon-size);
     width: 100%;
     height: 2rem;
     color: white;
@@ -223,11 +226,14 @@
   }
 
   .tab-icon {
-    height: 75%;
+    grid-column: icon-start / icon-end;
+    width: 100%;
+    height: 100%;
     aspect-ratio: 1/1;
   }
 
   .tab-text {
+    grid-column: title-start / keyhint-end;
     width: 100%;
     overflow: hidden;
     text-wrap: nowrap;
@@ -250,6 +256,10 @@
 
   .tab--selected {
     background-color: #3a3944;
+  }
+
+  .tab--selected > .tab-text {
+    grid-column: title-start / title-end;
   }
 
   .tab--selected > .tab-key-hint {
