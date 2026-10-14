@@ -1,4 +1,5 @@
 import { registerRecentNavigation } from "./recentNavigation";
+import { registerTabEvents } from "./tabEvents";
 
 export default defineBackground(() => {
   browser.commands.onCommand.addListener((command) => {
@@ -8,4 +9,5 @@ export default defineBackground(() => {
   });
 
   registerRecentNavigation();
+  registerTabEvents();
 });
