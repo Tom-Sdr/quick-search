@@ -1,12 +1,15 @@
 <script lang="ts">
   import SearchBox from "@/lib/components/SearchBox.svelte";
   import TabList from "@/lib/components/TabList.svelte";
+  import { registerShortcuts } from "@/lib/util/shortcut";
 
   let searchQuery: string = $state("");
   // oninput={(updatedSearchQuery) => {
   //   searchQuery = updatedSearchQuery;
   //   updateList(updatedSearchQuery, "queryChange");
   // }}
+
+  registerShortcuts();
 </script>
 
 <main>

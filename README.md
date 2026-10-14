@@ -1,11 +1,7 @@
-# WXT + Svelte
-
-This template should help get you started developing with Svelte in WXT.
-
-## Recommended IDE Setup
-
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+This is just a basic web extension that serves as a quicker access to tab search in firefox
 
 ## Development
 
-open `about:debugging#/runtime/this-firefox` > `inspect` to open the devtools for the extension.
+Run `npm run dev` to see the debug build in the browser
+
+Open `about:debugging#/runtime/this-firefox` > `inspect` to open the devtools for the extension.
